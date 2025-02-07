@@ -3,11 +3,14 @@ package com.example.oxo.controller;
 import com.example.oxo.model.MoveException;
 import com.example.oxo.service.GameService;
 import com.example.oxo.controller.MoveRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/oxo")
-@CrossOrigin
+// @CrossOrigin 删除, 避免与全局配置冲突
 public class GameController {
 	private final GameService gameService;
 
@@ -22,14 +25,23 @@ public class GameController {
 	}
 
 	/** 处理玩家在前端输入的指令（如"a1", "b2"...） */
+// 修改后的 makeMove 方法
 	@PostMapping("/move")
-	public Object makeMove(@RequestBody MoveRequest request) {
+	public ResponseEntity<?> makeMove(@RequestBody MoveRequest request) {
 		try {
 			gameService.handleIncomingCommand(request.getCommand());
+			return ResponseEntity.ok(gameService.getGameState());
 		} catch (MoveException e) {
-			return "Invalid Move: " + e.getMessage();
+			// 返回400错误 + JSON格式错误信息
+			return ResponseEntity.badRequest().body(
+					Map.of("error", "Invalid Move: " + e.getMessage())
+			);
+		} catch (Exception e) {
+			// 捕获其他未处理的异常，返回500 错误
+			return ResponseEntity.internalServerError().body(
+					Map.of("error", "Internal server error: " + e.getMessage())
+			);
 		}
-		return gameService.getGameState();
 	}
 
 	/** 设置玩家数量，并分配字母 */

@@ -19,9 +19,9 @@ public class GameService {
 	public GameService() {
 		// 初始默认构造时，给3x3, 阈值=3, 先无玩家 (或可默认加2玩家)
 		gameModel = new GameModel(3, 3, 3);
-		// 如果想在启动时默认有2个玩家，可在此添加:
-		// gameModel.addPlayer(new Player('X'));
-		// gameModel.addPlayer(new Player('O'));
+//		 如果想在启动时默认有2个玩家，可在此添加:
+//		 gameModel.setPlayer(0,new Player('X'));
+//		 gameModel.setPlayer(1,new Player('O'));
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class GameService {
 		return response;
 	}
 
-	/** 设置玩家数量。例如传入4则会创建4个玩家：'A','B','C','D'，并重置游戏。 */
+	/** 设置玩家数量。例如传入4则会创建4个玩家：'A','B',F'C','D'，并重置游戏。 */
 	public void setPlayers(int count) {
 		if (count < 1) count = 1;
 		// 限制到 26 以内
@@ -110,7 +110,10 @@ public class GameService {
 	/**
 	 * 处理玩家的文本输入命令：如 "a1", "b2"
 	 */
-	public void handleIncomingCommand(String command) throws MoveException {
+	public void handleIncomingCommand(String command) throws MoveException {    // 新增校验：是否有玩家？
+		if (gameModel.getNumberOfPlayers() == 0) {
+			throw new MoveException("No players set. Please set players first.");
+		}
 		// 如果游戏已结束，直接忽略
 		if (gameModel.isGameDrawn() || gameModel.getWinner() != null) {
 			return;
