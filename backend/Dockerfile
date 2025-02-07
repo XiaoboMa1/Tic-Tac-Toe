@@ -11,7 +11,7 @@ WORKDIR /app
 COPY . .
 RUN mvn package -DskipTests
 
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jre-slim
 COPY --from=build /app/target/*.jar /app.jar
 EXPOSE $PORT
 CMD ["java", "-jar", "/app.jar", "--server.port=$PORT"]
