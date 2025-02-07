@@ -148,38 +148,22 @@ export default {
     // 点击棋盘格子落子
     async function clickCell(rIdx, cIdx) {
       try {
-        // 新增参数校验
-        if (typeof rIdx !== 'number' || typeof cIdx !== 'number') {
-          throw new Error('Invalid row or column index');
-        }
-
-        // 生成command前打印参数
-        console.log('rIdx:', rIdx, 'cIdx:', cIdx);
-
-        const rowLetter = String.fromCharCode('a'.charCodeAt(0) + rIdx);
-        const colNumber = cIdx + 1;
-        const command = `${rowLetter}${colNumber}`; // 使用模板字符串更安全
-
-        // 打印生成的command
-        console.log('Generated command:', command);
-
+        // ...原有代码...
         const res = await fetch(`${apiBase}/move`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }) // 确保键名与后端匹配
+          body: JSON.stringify({ command })
         });
-
         if (!res.ok) {
           const errorData = await res.json();
-          alert(`操作失败: ${errorData.error}`);
+          alert(`操作失败: ${errorData.error}`); // 显示后端返回的错误信息
           return;
         }
-
         const data = await res.json();
         gameState.value = data;
       } catch (err) {
         console.error('clickCell error:', err);
-        alert('操作失败，请检查控制台日志');
+        alert('请求失败，请检查网络或控制台日志');
       }
     }
 

@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <!-- 头部 -->
     <header class="header">
       <h1>oxo created by XiaoboMa (Vue)</h1>
       <a
@@ -82,8 +83,7 @@ import { ref, onMounted } from 'vue'
 
 export default {
   setup() {
-    const apiBase = import.meta.env.VITE_API_BASE_URL;
-    const gameState = ref(null);
+    const gameState = ref(null)
 
     // 输入框数据
     const playerCountInput = ref('')
@@ -93,7 +93,7 @@ export default {
     // （1）只刷新当前棋盘，不重置
     async function fetchGameState() {
       try {
-        const res = await fetch(`${apiBase}/state`)
+        const res = await fetch('http://localhost:8080/api/oxo/state')
         const data = await res.json()
         gameState.value = data
       } catch (err) {
@@ -104,7 +104,7 @@ export default {
     // （2）重置棋盘
     async function resetBoard() {
       try {
-        const res = await fetch(`${apiBase}/reset`, {  // 反引号
+        const res = await fetch('http://localhost:8080/api/oxo/reset', {
           method: 'POST'
         })
         const data = await res.json()
@@ -118,7 +118,7 @@ export default {
     async function setPlayers() {
       if (!playerCountInput.value) return
       try {
-        const url = `${apiBase}/setPlayers?count=${playerCountInput.value}`
+        const url = `http://localhost:8080/api/oxo/setPlayers?count=${playerCountInput.value}`
         const res = await fetch(url, { method: 'POST' })
         const data = await res.json()
         gameState.value = data
@@ -132,7 +132,7 @@ export default {
     async function setBoardSize() {
       if (!rowsInput.value || !colsInput.value) return
       try {
-        const url = `${apiBase}/setSize?rows=${rowsInput.value}&cols=${colsInput.value}`
+        const url = `http://localhost:8080/api/oxo/setSize?rows=${rowsInput.value}&cols=${colsInput.value}`
         const res = await fetch(url, { method: 'POST' })
         const data = await res.json()
         gameState.value = data
@@ -148,38 +148,19 @@ export default {
     // 点击棋盘格子落子
     async function clickCell(rIdx, cIdx) {
       try {
-        // 新增参数校验
-        if (typeof rIdx !== 'number' || typeof cIdx !== 'number') {
-          throw new Error('Invalid row or column index');
-        }
-
-        // 生成command前打印参数
-        console.log('rIdx:', rIdx, 'cIdx:', cIdx);
-
-        const rowLetter = String.fromCharCode('a'.charCodeAt(0) + rIdx);
-        const colNumber = cIdx + 1;
-        const command = `${rowLetter}${colNumber}`; // 使用模板字符串更安全
-
-        // 打印生成的command
-        console.log('Generated command:', command);
-
-        const res = await fetch(`${apiBase}/move`, {
+        // 后端接受的指令格式如 "a1", "b2"
+        const rowLetter = String.fromCharCode('a'.charCodeAt(0) + rIdx)
+        const colNumber = cIdx + 1
+        const command = rowLetter + colNumber
+        const res = await fetch('http://localhost:8080/api/oxo/move', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }) // 确保键名与后端匹配
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          alert(`操作失败: ${errorData.error}`);
-          return;
-        }
-
-        const data = await res.json();
-        gameState.value = data;
+          body: JSON.stringify({ command })
+        })
+        const data = await res.json()
+        gameState.value = data
       } catch (err) {
-        console.error('clickCell error:', err);
-        alert('操作失败，请检查控制台日志');
+        console.error('clickCell error:', err)
       }
     }
 
