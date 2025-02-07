@@ -1,0 +1,26 @@
+/* 字体引入 */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap');
+
+.container {
+  /* 使用背景图片 */
+  background: url('/src/assets/bg/back1.jpg') center/cover !important;
+  border: 3px solid #654321 !important;
+  box-shadow: 0 0 30px rgba(0,0,0,0.7) !important;
+  font-family: 'Cinzel Decorative', cursive !important;
+}
+
+.cell {
+  background: rgba(120, 90, 60, 0.8) !important;
+  border: 2px groove #c9a769 !important;
+  color: #ffd700 !important;
+  text-shadow: 1px 1px 2px #000 !important;
+  width: 2rem;  /* 确保单元格是 2rem 正方形 */
+  height: 2rem;
+}
+
+button {
+  background: linear-gradient(to bottom, #8b5a2b, #654321) !important;
+  border: 1px solid #c9a769 !important;
+  letter-spacing: 1px !important;
+  color: #fff !important;
+}
