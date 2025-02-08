@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre-slim
+FROM eclipse-temurin:17.0.14_7-jre-jammy
 ARG PORT=8080
 ENV PORT=${PORT}
 COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar /app/app.jar
