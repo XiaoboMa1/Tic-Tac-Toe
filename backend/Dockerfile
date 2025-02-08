@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-17-focal
+FROM maven:3.9.9-eclipse-temurin-17-focal AS build
 ARG PORT=8080
 ENV PORT=${PORT}
 COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar /app/app.jar
