@@ -5,7 +5,7 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Production stage: 使用轻量级 OpenJDK 17 运行 jar 包
-FROM openjdk:17-jdk-alpine3
+FROM openjdk:17-jdk-alpine3.12
 ARG PORT=8080
 ENV PORT=${PORT}
 # 从 build 阶段复制 jar 文件到 /app/app.jar
