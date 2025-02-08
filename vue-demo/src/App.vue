@@ -84,7 +84,8 @@ export default {
   setup() {
     const apiBase = import.meta.env.VITE_API_BASE_URL;
     const gameState = ref(null);
-
+    console.log("[DEBUG] VITE_API_BASE_URL:", apiBase);
+    // 其他代码...
     // 输入框数据
     const playerCountInput = ref('')
     const rowsInput = ref('')
@@ -152,7 +153,10 @@ export default {
         if (typeof rIdx !== 'number' || typeof cIdx !== 'number') {
           throw new Error('Invalid row or column index');
         }
-
+        if (gameState.value && gameState.value.cells && gameState.value.cells[rIdx][cIdx] !== null) {
+            alert("该格子已被占用，请选择一个空白的格子！");
+            return;
+        }
         // 生成command前打印参数
         console.log('rIdx:', rIdx, 'cIdx:', cIdx);
 
@@ -163,30 +167,37 @@ export default {
         // 打印生成的command
         console.log('Generated command:', command);
 
-        const res = await fetch(`${apiBase}/move`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }) // 确保键名与后端匹配
-        });
+      const res = await fetch(`${apiBase}/move`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' // 必须明确指定
+        },
+        body: JSON.stringify({ command }) // 确保键名与后端一致
+      });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          alert(`操作失败: ${errorData.error}`);
-          return;
-        }
-
-        const data = await res.json();
-        gameState.value = data;
-      } catch (err) {
-        console.error('clickCell error:', err);
-        alert('操作失败，请检查控制台日志');
+      // 检查响应状态
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(`错误: ${errorData.error}`);
+        return;
       }
+
+      // 更新游戏状态
+      const data = await res.json();
+      gameState.value = data;
+    } catch (err) {
+      console.error('操作失败:', err);
+      alert('操作失败，请检查控制台日志');
     }
+  }
 
     // 初次载入组件就获取一次状态（不重置）
     onMounted(() => {
-      fetchGameState()
-    })
+        // 初始化时默认设置2个玩家
+        fetch(`${apiBase}/setPlayers?count=2`, { method: 'POST' })
+            .then(() => fetchGameState()) // 再获取状态
+            .catch(err => console.error(err));
+    });
 
     return {
       gameState,
