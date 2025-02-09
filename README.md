@@ -1,57 +1,75 @@
-# Tic-Tac-Toe Game with Vue & Spring Boot
+# Tic-Tac-Toe Game
 
-Tired of the same old 3×3 Tic-Tac-Toe? This OXO project takes the classic game to the next level! Customize the number of players, set a larger board size—go for a 5×5 or even 7×7 grid for a more exciting challenge. Built with Vue 3 + JavaScript on the frontend and Spring Boot on the backend, this game features a sleek interface and smooth gameplay, offering a more flexible and creative Tic-Tac-Toe experience.  
+## 🌐 Play Online
 
-### **Tech Stack**  
-- **Frontend**: Vue 3 + Vite + JavaScript  
-- **Backend**: Spring Boot (Java)  
-- **Styling**: CSS (You can also use Tailwind, but for this project it is unnecessary)  
-- **Build Tools**: Vite (Frontend), Maven/Gradle (Backend)  
+Dive straight into the action without any setup! Play the game online at: [https://tic-tac-toe-1-fr16.onrender.com](https://tic-tac-toe-1-fr16.onrender.com)
 
-### **Key Features**  
-- **Customizable Player Count**: Add multiple players, each assigned a unique symbol.  
-- **Flexible Board Size**: No more 3×3 limitations—play on 4×4, 5×5, or even larger grids.  
-- **Simple Click-to-Place Mechanism**: Click any empty cell to mark your move, and the system automatically switches to the next player.  
-- **Win/Draw Detection**: Automatically checks for a winning sequence or detects a draw if the board is full.  
-- **Minimalist UI**: Centered layout with three built-in themes (customizable), plus a "Go to GitHub" button for easy access.  
+## 🔧 Tech Stack
 
-### **Getting Started**  
+- **Frontend**: Vue 3 + Vite + JavaScript
+- **Backend**: Spring Boot (Java)
+- **Styling**: CSS (with optional Tailwind CSS)
+- **Deployment**: Docker
 
-#### **1. Backend Setup**  
-Clone the backend repository:  
-```bash
-git clone https://github.com/YourName/oxo-backend.git
-```
-Build and run the Spring Boot application using Maven or Gradle:  
-```bash
-# Using Maven
-mvn clean spring-boot:run
-# Runs on http://localhost:8080 by default
-```
+## 🎮 Game Features
 
-#### **2. Frontend Setup**  
-Clone the frontend repository:  
-```bash
-git clone https://github.com/YourName/oxo-frontend-vue.git
-```
-Navigate to the frontend directory, install dependencies, and start the development server:  
-```bash
-npm install
-npm run dev
-```
-Open `http://localhost:5173` in your browser to access the game.  
+- **Dynamic Gameplay**: Supports both single-player and multiplayer modes.
+- **Customizable Board**: Adjust the grid size to your preference for varied challenges.
+- **Real-time Updates**: Instant feedback on moves ensures an engaging gameplay experience.
 
-**Note**: If using Vite proxy, ensure the backend CORS settings or proxy configuration are properly set up.  
+## 🕹️ How to Play
 
-### **How to Play**  
-1. **Set Player Count**: Enter the desired number of players (e.g., 2, 3, 4...) in the input field and click "Set Players."  
-2. **Set Board Size**: Define the number of rows and columns (e.g., 5×5) and click "Set Board Size" to expand the grid.  
-3. **Make a Move**: The current player (indicated on the UI) clicks an empty cell to place their mark.  
-4. **Winning Conditions**: A player wins when they achieve the required number of aligned marks (default: 3). If the board is full without a winner, it's a draw.  
-5. **Restart the Game**: Click "Reset" or refresh the page to start a new game.  
+1. **Set Up Players**:
+   - Enter the desired number of players.
+   - Click on the "Set Players" button to confirm.
+2. **Configure the Board**:
+   - Input the number of rows and columns for the game board.
+   - Click on the "Set Board Size" button to apply your settings.
+3. **Start Playing**:
+   - Players take turns clicking on the grid cells to place their marks.
+   - The first player to align their marks horizontally, vertically, or diagonally wins the game.
+   - If all cells are filled without a winning combination, the game is declared a draw.
 
-### **Why This Project?**  
-- **Highly Customizable**: Play on grids from 3×3 up to 9×9, with multiple players for a more competitive experience.  
-- **Easy to Install & Use**: Built with a modern frontend-backend separation using Vue 3 and Spring Boot, making setup and deployment simple.  
+## 🛠️ Local Deployment
 
-Get ready for a fresh and exciting twist on Tic-Tac-Toe! 🚀
+For those interested in running the game locally, follow these steps:
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/YourUsername/tic-tac-toe.git
+   cd tic-tac-toe
+   ```
+2. **Set Up**:
+   - Ensure you have Java and Maven installed.
+   - Navigate to the backend directory:
+     ```bash
+     cd backend
+     ```
+   - Build and run the Spring Boot application:
+     ```bash
+     mvn clean install
+     mvn spring-boot:run
+     ```
+   - The server will start at `http://localhost:8080`.
+   - Ensure you have Node.js and npm installed.
+   - Navigate to the frontend directory:
+     ```bash
+     cd ../frontend
+     ```
+   - Install dependencies:
+     ```bash
+     npm install
+     ```
+   - Start the development server:
+     ```bash
+     npm run dev
+     ```
+   - Access the game at `http://localhost:5173`.
+
+4. **Docker Deployment** (Optional):
+   - If you prefer using Docker, ensure Docker is installed on your system.
+   - Build and run the Docker containers:
+     ```bash
+     docker-compose up --build
+     ```
+   - The application will be accessible at `http://localhost:8080`.
