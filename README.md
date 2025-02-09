@@ -3,6 +3,7 @@
 ## 🌐 Play Online
 
 Dive straight into the action without any setup! Play the game online at: [https://tic-tac-toe-1-fr16.onrender.com](https://tic-tac-toe-1-fr16.onrender.com)
+(Please bear with the wait before the start since it's deployed on a free server ! )
 
 ## 🔧 Tech Stack
 
