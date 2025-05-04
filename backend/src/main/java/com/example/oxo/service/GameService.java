@@ -19,9 +19,12 @@ public class GameService {
 	public GameService() {
 		// 初始默认构造时，给3x3, 阈值=3, 先无玩家 (或可默认加2玩家)
 		gameModel = new GameModel(3, 3, 3);
+
 //		 如果想在启动时默认有2个玩家，可在此添加:
-//		 gameModel.setPlayer(0,new Player('X'));
-//		 gameModel.setPlayer(1,new Player('O'));
+		gameModel.resetPlayers(2);
+		gameModel.setPlayer(0,new Player('X'));
+		 gameModel.setPlayer(1,new Player('O'));
+		resetGame();
 	}
 
 	/**
