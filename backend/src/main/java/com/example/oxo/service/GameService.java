@@ -1,3 +1,4 @@
+// src/main/java/com/example/oxo/service/GameService.java
 package com.example.oxo.service;
 
 import com.example.oxo.model.GameModel;
@@ -14,17 +15,28 @@ import static java.lang.Math.min;
 @Service
 public class GameService {
 
-	private final GameModel gameModel;
+	protected final GameModel gameModel; // Made protected for OptimizedGameService if needed
 
 	public GameService() {
-		// 初始默认构造时，给3x3, 阈值=3, 先无玩家 (或可默认加2玩家)
+		// 初始默认构造时，给3x3, 阈值=3
 		gameModel = new GameModel(3, 3, 3);
 
-//		 如果想在启动时默认有2个玩家，可在此添加:
+		// 如果想在启动时默认有2个玩家，可在此添加:
 		gameModel.resetPlayers(2);
 		gameModel.setPlayer(0,new Player('X'));
-		 gameModel.setPlayer(1,new Player('O'));
-		resetGame();
+		gameModel.setPlayer(1,new Player('O'));
+
+		// Perform initial game state setup directly here
+		// instead of calling the overridable resetGame() method.
+		for (int i = 0; i < gameModel.getNumberOfRows(); i++) {
+			for (int j = 0; j < gameModel.getNumberOfColumns(); j++) {
+				gameModel.setCellOwner(i, j, null);
+			}
+		}
+		gameModel.setWinner(null);
+		gameModel.setGameDrawn(false);
+		gameModel.setCurrentPlayerNumber(0);
+		// The public resetGame() method below will be used for explicit resets later.
 	}
 
 	/**
@@ -85,7 +97,7 @@ public class GameService {
 			gameModel.setPlayer(i, new Player(letter));
 		}
 
-		resetGame(); // 重置对局
+		resetGame(); // 重置对局 - This call is fine when setPlayers is called after construction
 	}
 
 
@@ -107,7 +119,7 @@ public class GameService {
 		gameModel.resizeBoard(newRows, newCols);
 
 		// 重置对局
-		resetGame();
+		resetGame(); // This call is fine when setBoardSize is called after construction
 	}
 
 	/**
@@ -204,7 +216,7 @@ public class GameService {
 		return true;
 	}
 
-	private boolean checkForWinner(int row, int col) {
+	protected boolean checkForWinner(int row, int col) { // Made protected for OptimizedGameService
 		if (checkVerticalWin(col)) return true;
 		if (checkHorizontalWin(row)) return true;
 		return checkDiagonalWin(row, col);
@@ -282,8 +294,11 @@ public class GameService {
 		return count == gameModel.getWinThreshold();
 	}
 
-	private char getCurrentPlayerLetter() {
+	protected char getCurrentPlayerLetter() { // Made protected for OptimizedGameService
 		int curr = gameModel.getCurrentPlayerNumber();
 		return gameModel.getPlayerByNumber(curr).getPlayingLetter();
+	}
+	public GameModel getGameModel() {
+		return gameModel;
 	}
 }

@@ -1,26 +1,93 @@
-/* 字体引入 */
+/* Font import */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap');
 
+/* Ensure container and its content have the right styling */
 .container {
-  /* 使用背景图片 */
+  /* Use background image */
   background: url('/src/assets/bg/back1.jpg') center/cover !important;
   border: 3px solid #654321 !important;
   box-shadow: 0 0 30px rgba(0,0,0,0.7) !important;
   font-family: 'Cinzel Decorative', cursive !important;
+  color: white !important;
 }
 
+/* Style game cells */
 .cell {
   background: rgba(120, 90, 60, 0.8) !important;
   border: 2px groove #c9a769 !important;
   color: #ffd700 !important;
   text-shadow: 1px 1px 2px #000 !important;
-  width: 2rem;  /* 确保单元格是 2rem 正方形 */
-  height: 2rem;
+  width: 2rem !important;
+  height: 2rem !important;
+  font-size: 1.2rem !important;
 }
 
+/* Style buttons */
 button {
   background: linear-gradient(to bottom, #8b5a2b, #654321) !important;
   border: 1px solid #c9a769 !important;
   letter-spacing: 1px !important;
   color: #fff !important;
+  cursor: pointer !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+button:hover {
+  background: linear-gradient(to bottom, #a06633, #7a5230) !important;
+  transform: translateY(-1px) !important;
+}
+
+button:active {
+  transform: translateY(1px) !important;
+}
+
+/* Style input fields to ensure text is visible */
+input {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid #c9a769 !important;
+  color: white !important;
+  padding: 0.5rem !important;
+  border-radius: 4px !important;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Add responsive styles */
+@media (max-width: 900px) {
+  .container {
+    border-width: 2px !important;
+  }
+  
+  .cell {
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    border-width: 1px !important;
+  }
+  
+  .cell {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    font-size: 0.9rem !important;
+    border-width: 1px !important;
+  }
+  
+  button {
+    padding: 0.3rem 0.8rem !important;
+    font-size: 0.9rem !important;
+  }
+  
+  input {
+    padding: 0.3rem !important;
+    font-size: 0.9rem !important;
+  }
 }

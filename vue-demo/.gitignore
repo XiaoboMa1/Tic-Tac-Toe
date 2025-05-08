@@ -29,3 +29,7 @@ coverage
 
 *.tsbuildinfo
 backup/
+mvnw
+target/
+/vue-demo/node_modules
+.history/
