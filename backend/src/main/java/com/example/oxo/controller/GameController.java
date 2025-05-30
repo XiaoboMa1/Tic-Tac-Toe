@@ -139,4 +139,21 @@ public class GameController {
             performanceStats.recordApiCall("resetGame", duration);
         }
     }
+    @GetMapping("/winCheckBenchmark")
+    public ResponseEntity<Object> runWinCheckBenchmarkController() {
+        long controllerCallStartMs = System.currentTimeMillis();
+        try {
+            System.out.println("Running win-checking algorithm benchmark...");
+            Map<String, Object> benchmarkData = PerformanceBenchmark.runWinCheckingBenchmark();
+            System.out.println("Win-checking benchmark completed. Returning results.");
+            performanceStats.recordApiCall("runWinCheckBenchmark", System.currentTimeMillis() - controllerCallStartMs);
+            return ResponseEntity.ok(benchmarkData);
+        } catch (Exception e) {
+            System.err.println("GameController: Error during win-checking benchmark: " + e.getMessage());
+            e.printStackTrace();
+            performanceStats.recordApiCall("runWinCheckBenchmark_Error", System.currentTimeMillis() - controllerCallStartMs);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(Map.of("error", "Win-checking benchmark failed: " + e.getMessage()));
+        }
+    }
 }
