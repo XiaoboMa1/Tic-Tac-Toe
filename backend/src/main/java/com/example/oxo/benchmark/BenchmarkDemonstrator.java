@@ -136,7 +136,7 @@ public class BenchmarkDemonstrator {
         for (int i = 1; i < readIterations; i++) {
             long start = System.nanoTime();
             cacheService.getGameState();
-            cacheTotalTime += (System.nanoTme() - start);
+            cacheTotalTime += (System.nanoTime() - start);
         }
 
         // 3. 组装结果
