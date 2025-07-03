@@ -43,36 +43,74 @@
         </TransitionGroup>
 
         <button @click="runBenchmark" :disabled="benchmarking" class="benchmark-button animated-button">
-          {{ benchmarking ? 'Testing...' : 'Run Performance Test' }}
+          {{ benchmarking ? 'Running Demonstration...' : 'Run Performance Demonstration' }}
         </button>
         
+        <!-- [MODIFIED] New section to display structured benchmark results -->
         <Transition name="fade">
-          <div v-if="benchmarkResults" class="benchmark-results metric-card" key="benchmark-res">
-            <h3>Another Random Test</h3>
-            <div class="result-summary">
-              Algorithm Performance Improvement: 
-              <span class="highlight">
-                {{ calculateAverageImprovement().toFixed(2) }}%
-              </span>
+          <div v-if="benchmarkResults" class="benchmark-results-container">
+
+            <!-- Algorithm Benchmark Card -->
+            <div v-if="benchmarkResults.algorithmBenchmark" class="metric-card" key="algo-benchmark">
+              <h3>Algorithm Performance (Win-Check)</h3>
+              <div class="result-summary">
+                Performance Improvement: 
+                <span class="highlight">
+                  {{ benchmarkResults.algorithmBenchmark.improvementPercent.toFixed(2) }}%
+                </span>
+              </div>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Board Size</td>
+                    <td>{{ benchmarkResults.algorithmBenchmark.boardSize }}</td>
+                  </tr>
+                  <tr>
+                    <td>Original Algorithm (avg ns)</td>
+                    <td>{{ benchmarkResults.algorithmBenchmark.originalTimeNs.toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <td>Optimized Algorithm (avg ns)</td>
+                    <td>{{ benchmarkResults.algorithmBenchmark.optimizedTimeNs.toLocaleString() }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Board Size</th>
-                  <th>Original Algorithm (ns)</th>
-                  <th>Optimized Algorithm (ns)</th>
-                  <th>Performance Improvement</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(_, size) in benchmarkResults.original" :key="size">
-                  <td>{{ size }}</td>
-                  <td>{{ benchmarkResults.original[size].toLocaleString() }}</td>
-                  <td>{{ benchmarkResults.optimized[size].toLocaleString() }}</td>
-                  <td class="improvement">{{ benchmarkResults.improvements[size].toFixed(2) }}%</td>
-                </tr>
-              </tbody>
-            </table>
+
+            <!-- Cache Benchmark Card -->
+            <div v-if="benchmarkResults.cacheBenchmark" class="metric-card" key="cache-benchmark">
+              <h3>Cache Performance (Read-Heavy Scenario)</h3>
+              <div class="result-summary">
+                Performance Improvement: 
+                <span class="highlight">
+                  {{ benchmarkResults.cacheBenchmark.improvementPercent.toFixed(2) }}%
+                </span>
+              </div>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Read Operations</td>
+                    <td>{{ benchmarkResults.cacheBenchmark.readIterations.toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <td>Without Cache (total ns)</td>
+                    <td>{{ benchmarkResults.cacheBenchmark.noCacheTimeNs.toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <td>With Cache (total ns)</td>
+                    <td>{{ benchmarkResults.cacheBenchmark.withCacheTimeNs.toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <td>Cache Hits / Misses</td>
+                    <td>
+                      {{ benchmarkResults.cacheBenchmark.cacheStats.hits }} / 
+                      {{ benchmarkResults.cacheBenchmark.cacheStats.misses }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
           </div>
         </Transition>
       </div>
@@ -88,22 +126,26 @@ export default {
       performanceData: null,
       benchmarkResults: null,
       loading: true,
-      benchmarking: false
+      benchmarking: false,
+      intervalId: null, // Initialize intervalId
     }
   },
   
   mounted() {
     this.fetchPerformanceData();
-    this.intervalId = setInterval(this.fetchPerformanceData, 30000); // Store interval ID
+    this.intervalId = setInterval(this.fetchPerformanceData, 30000);
   },
 
   beforeUnmount() {
-    clearInterval(this.intervalId); // Clear interval on component unmount
+    clearInterval(this.intervalId);
   },
   
   methods: {
     async fetchPerformanceData() {
-      this.loading = true; // Ensure loading is true at the start
+      // Set loading to true only if it's the initial load
+      if (!this.performanceData) {
+        this.loading = true;
+      }
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/performance`);
         if (!response.ok) {
@@ -112,27 +154,25 @@ export default {
         this.performanceData = await response.json();
       } catch (error) {
         console.error('Failed to fetch performance data:', error);
-        this.performanceData = null; // Set to null on error to show "No data" message
+        this.performanceData = null;
       } finally {
         this.loading = false;
       }
     },
     
-    // In PerformanceMetrics.vue <script> methods
     async runBenchmark() {
       if (this.benchmarking) return;
       try {
         this.benchmarking = true;
-        this.benchmarkResults = null; // Clear previous results
-        // 调用新的统一端点
+        this.benchmarkResults = null;
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/run-demonstration`);
         if (!response.ok) {
           throw new Error(`HTTP error: ${response.status}`);
         }
         this.benchmarkResults = await response.json();
-        // ...
       } catch (error) {
-        // ...
+        console.error('Failed to run benchmark:', error);
+        alert('Benchmark failed. Check console for details.');
       } finally {
         this.benchmarking = false;
       }
@@ -145,41 +185,32 @@ export default {
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
       
-      return `${hours}h ${minutes}m ${seconds}s`; // English format
+      return `${hours}h ${minutes}m ${seconds}s`;
     },
-    
-    calculateAverageImprovement() {
-      if (!this.benchmarkResults || !this.benchmarkResults.improvements) {
-        return 0;
-      }
-      const improvements = Object.values(this.benchmarkResults.improvements);
-      if (improvements.length === 0) return 0;
-      return improvements.reduce((sum, value) => sum + value, 0) / improvements.length;
-    }
   }
 }
 </script>
 
-<style scoped> /* Changed to scoped to avoid conflicts if this component is reused */
+<style scoped>
 .performance-metrics {
-  margin-top: 2.5rem; /* Increased margin */
-  padding: 1.5rem; /* Increased padding */
-  background: rgba(0, 0, 0, 0.6); /* Darker background for better contrast */
-  border-radius: 12px; /* More rounded */
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
   width: 100%;
   max-width: 800px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.3); /* Softer shadow */
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
 }
 
 .performance-metrics h2 {
   text-align: center;
   margin-bottom: 1.5rem;
-  color: #ffd700; /* Gold color for headings */
+  color: #ffd700;
   font-size: 1.5rem;
 }
 
 .performance-metrics h3 {
-  color: #f0e68c; /* Khaki for subheadings */
+  color: #f0e68c;
   margin-bottom: 1rem;
   border-bottom: 1px solid rgba(255,215,0,0.3);
   padding-bottom: 0.5rem;
@@ -188,15 +219,15 @@ export default {
 .cards-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Gap between cards */
+  gap: 1.5rem;
 }
 
 .metric-card {
-  margin-bottom: 1rem; /* Kept for fallback if not in flex/grid */
-  padding: 1.2rem; /* Increased padding */
-  background: rgba(50, 30, 10, 0.8); /* Slightly more vibrant */
-  border-radius: 8px; /* More rounded */
-  border: 1px solid rgba(201, 167, 105, 0.4); /* Subtle border */
+  margin-bottom: 1rem;
+  padding: 1.2rem;
+  background: rgba(50, 30, 10, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(201, 167, 105, 0.4);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -212,37 +243,45 @@ table {
 }
 
 th, td {
-  padding: 0.6rem 0.8rem; /* Increased padding */
+  padding: 0.6rem 0.8rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25); /* Lighter border */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
 }
 
+/* Make the first column of the new tables bold for clarity */
+.benchmark-results-container table td:first-child {
+  font-weight: bold;
+  color: #f0e68c;
+}
+
+
 th {
-  color: #ffd700; /* Gold for table headers */
-  font-weight: 600; /* Bolder */
+  color: #ffd700;
+  font-weight: 600;
 }
 
 .benchmark-button {
-  display: block; /* Make it block to center with margin */
-  margin: 1.5rem auto; /* More margin and auto for centering */
-  padding: 0.7rem 1.5rem; /* Increased padding */
-  /* General styling inherited or from App.vue if .animated-button is global */
-  min-width: 220px; /* Wider button */
+  display: block;
+  margin: 1.5rem auto;
+  padding: 0.7rem 1.5rem;
+  min-width: 220px;
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: linear-gradient(to bottom, #555, #333) !important; /* Darker disabled state */
+  background: linear-gradient(to bottom, #555, #333) !important;
 }
 
-.benchmark-results {
+.benchmark-results-container {
   margin-top: 1.5rem;
-  /* animation: fadeIn 0.5s ease-in-out; (Replaced by Transition) */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .result-summary {
-  font-size: 1.15rem; /* Slightly larger */
+  font-size: 1.15rem;
   margin-bottom: 1.2rem;
   text-align: center;
   padding: 0.5rem;
@@ -251,25 +290,19 @@ button:disabled {
 }
 
 .highlight {
-  color: #ffd700;
+  color: #66bb6a; /* Green for positive improvement */
   font-weight: bold;
-  font-size: 1.25rem; /* Slightly larger */
+  font-size: 1.25rem;
 }
 
-.improvement {
-  color: #66bb6a; /* Softer green */
-  font-weight: bold;
-}
-
-.loading-metrics { /* Renamed from .loading to avoid conflict */
+.loading-metrics {
   text-align: center;
-  padding: 2rem; /* More padding */
+  padding: 2rem;
   font-size: 1.2rem;
   font-style: italic;
   color: #ccc;
 }
 
-/* Vue Transition Classes for PerformanceMetrics */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.4s ease-in-out;
@@ -288,25 +321,22 @@ button:disabled {
   opacity: 0;
   transform: translateY(20px);
 }
-/* Ensure leave transitions are applied correctly for lists */
 .list-item-move {
   transition: transform 0.5s ease;
 }
 
-
-/* Responsive adjustments (existing styles maintained, can be adjusted) */
 @media (max-width: 800px) {
   .performance-metrics { font-size: 0.9rem; padding: 1rem; }
-  table { font-size: 0.85rem; } /* Slightly larger base for tables */
-  th, td { padding: 0.5rem 0.6rem; } /* Adjusted padding */
+  table { font-size: 0.85rem; }
+  th, td { padding: 0.5rem 0.6rem; }
   .performance-metrics h2 { font-size: 1.3rem; }
 }
 
 @media (max-width: 500px) {
   .performance-metrics { font-size: 0.85rem; }
-  table { font-size: 0.75rem; display: block; overflow-x: auto; } /* Allow table horizontal scroll */
+  table { font-size: 0.75rem; display: block; overflow-x: auto; }
   .performance-metrics h2 { font-size: 1.2rem; }
   .metric-card { padding: 1rem; }
-  th, td { padding: 0.4rem 0.5rem; white-space: nowrap; } /* Prevent text wrapping in cells */
+  th, td { padding: 0.4rem 0.5rem; white-space: nowrap; }
 }
 </style>
