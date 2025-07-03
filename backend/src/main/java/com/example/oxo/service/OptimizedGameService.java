@@ -1,27 +1,32 @@
 package com.example.oxo.service;
 
-import com.example.oxo.model.Player; // Added import
+import com.example.oxo.model.GameModel;
+import com.example.oxo.model.Player;
 
 public class OptimizedGameService extends GameService {
 
     // 方向向量：水平、垂直、主对角线、副对角线
-    private static final int[][] DIRECTIONS = { // Made static final
+    private static final int[][] DIRECTIONS = {
         {0, 1}, {1, 0}, {1, 1}, {1, -1}
     };
     
     @Override
     public boolean checkForWinner(int row, int col) {
-        char targetLetter = super.getCurrentPlayerLetter(); // Use super or this, ensure visibility
-        int winThreshold = super.getGameModel().getWinThreshold(); // Use getter or ensure visibility
+        // 缓存常用对象和值，减少方法调用开销
+        GameModel gameModel = super.getGameModel();
+        char targetLetter = super.getCurrentPlayerLetter();
+        int winThreshold = gameModel.getWinThreshold();
+        int rows = gameModel.getNumberOfRows();
+        int cols = gameModel.getNumberOfColumns();
         
         // 检查四个方向
         for (int[] dir : DIRECTIONS) {
             int count = 1; // 包含当前落子点
             
             // 正向检查
-            count += countInDirection(row, col, dir[0], dir[1], targetLetter);
+            count += countInDirection(gameModel, row, col, dir[0], dir[1], targetLetter, rows, cols);
             // 反向检查
-            count += countInDirection(row, col, -dir[0], -dir[1], targetLetter);
+            count += countInDirection(gameModel, row, col, -dir[0], -dir[1], targetLetter, rows, cols);
             
             if (count >= winThreshold) {
                 return true;
@@ -31,14 +36,16 @@ public class OptimizedGameService extends GameService {
         return false;
     }
     
-    // 计算某方向上连续相同棋子的数量
-    private int countInDirection(int startRow, int startCol, int rowDelta, int colDelta, char targetLetter) {
+    // 优化版本：传入缓存的值，减少方法调用
+    private int countInDirection(GameModel gameModel, int startRow, int startCol, 
+                                int rowDelta, int colDelta, char targetLetter, int maxRows, int maxCols) {
         int count = 0;
         int r = startRow + rowDelta;
         int c = startCol + colDelta;
         
-        while (!super.getGameModel().isOutOfBounds(r, c)) { // Use getter or ensure visibility
-            Player cell = super.getGameModel().getCellOwner(r, c); // Use getter or ensure visibility
+        // 内联边界检查，避免方法调用
+        while (r >= 0 && r < maxRows && c >= 0 && c < maxCols) {
+            Player cell = gameModel.getCellOwner(r, c);
             if (cell != null && cell.getPlayingLetter() == targetLetter) {
                 count++;
                 r += rowDelta;

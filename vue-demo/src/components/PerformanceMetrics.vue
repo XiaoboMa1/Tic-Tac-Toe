@@ -52,8 +52,11 @@
               <h3>Algorithm Performance (Win-Check)</h3>
               <div class="result-summary">
                 Performance Improvement: 
-                <span class="highlight-green">
+                <span :class="benchmarkResults.algorithmBenchmark.improvementPercent >= 0 ? 'highlight-green' : 'highlight-red'">
                   {{ benchmarkResults.algorithmBenchmark.improvementPercent.toFixed(2) }}%
+                </span>
+                <span v-if="benchmarkResults.algorithmBenchmark.improvementPercent < 0" class="performance-note">
+                  (Optimization shows regression in this test scenario)
                 </span>
               </div>
               <table>
@@ -61,6 +64,10 @@
                   <tr>
                     <td>Board Size</td>
                     <td>{{ benchmarkResults.algorithmBenchmark.boardSize }}</td>
+                  </tr>
+                  <tr>
+                    <td>Test Samples</td>
+                    <td>{{ benchmarkResults.algorithmBenchmark.samples.toLocaleString() }}</td>
                   </tr>
                   <tr>
                     <td>Original Algorithm (avg ns)</td>
@@ -84,6 +91,10 @@
               <table>
                 <tbody>
                   <tr>
+                    <td>Write Operations</td>
+                    <td>{{ benchmarkResults.cacheBenchmark.writeOperations.toLocaleString() }}</td>
+                  </tr>
+                  <tr>
                     <td>Read Operations</td>
                     <td>{{ benchmarkResults.cacheBenchmark.readIterations.toLocaleString() }}</td>
                   </tr>
@@ -100,6 +111,7 @@
                     <td>
                       {{ benchmarkResults.cacheBenchmark.cacheStats.hits }} / 
                       {{ benchmarkResults.cacheBenchmark.cacheStats.misses }}
+                      ({{ (benchmarkResults.cacheBenchmark.cacheStats.hitRate * 100).toFixed(1) }}% hit rate)
                     </td>
                   </tr>
                 </tbody>
@@ -194,6 +206,11 @@ export default {
   font-weight: bold;
   font-size: 1.25rem;
 }
+.highlight-red {
+  color: #ff6b6b; /* Softer red */
+  font-weight: bold;
+  font-size: 1.25rem;
+}
 .performance-metrics { margin-top: 2.5rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.6); border-radius: 12px; width: 100%; max-width: 800px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
 .performance-metrics h2 { text-align: center; margin-bottom: 1.5rem; color: #ffd700; font-size: 1.5rem; }
 .performance-metrics h3 { color: #f0e68c; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,215,0,0.3); padding-bottom: 0.5rem; }
@@ -214,6 +231,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; background: linear-gradient
 .list-item-enter-active, .list-item-leave-active { transition: all 0.5s ease; }
 .list-item-enter-from, .list-item-leave-to { opacity: 0; transform: translateY(20px); }
 .list-item-move { transition: transform 0.5s ease; }
+.performance-note { font-size: 0.85rem; color: #ccc; }
 @media (max-width: 800px) { .performance-metrics { font-size: 0.9rem; padding: 1rem; } table { font-size: 0.85rem; } th, td { padding: 0.5rem 0.6rem; } .performance-metrics h2 { font-size: 1.3rem; } }
 @media (max-width: 500px) { .performance-metrics { font-size: 0.85rem; } table { font-size: 0.75rem; display: block; overflow-x: auto; } .performance-metrics h2 { font-size: 1.2rem; } .metric-card { padding: 1rem; } th, td { padding: 0.4rem 0.5rem; white-space: nowrap; } }
 </style>

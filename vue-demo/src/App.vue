@@ -108,6 +108,7 @@
 
       <div class="row">
         <button @click="resetBoard" class="clear-btn animated-button">Clear Board</button>
+        <button @click="updatePerformanceData" class="update-perf-btn animated-button">Update Performance Data</button>
       </div>
       
       <!-- [FIX #1] Add the 'ref' attribute to the component tag -->
@@ -167,7 +168,6 @@ export default {
         const res = await fetch(`${this.apiBase}/reset`, { method: 'POST' });
         this.gameState = await res.json();
         this.winningCells.length = 0;
-        // [FIX #3] Call the child component's method via this.$refs
         this.$refs.performanceMetrics.fetchPerformanceData();
       } catch (err) {
         console.error('Failed to reset board:', err);
@@ -210,10 +210,14 @@ export default {
         if (!res.ok) { const errorData = await res.json(); alert(`Error: ${errorData.error}`); return; }
         this.gameState = await res.json();
         if (this.gameState.winner) this.calculateWinningPath();
-        this.$refs.performanceMetrics.fetchPerformanceData();
       } catch (err) {
         console.error('Operation failed:', err);
         alert('Operation failed. Please check console logs.');
+      }
+    },
+    updatePerformanceData() {
+      if (this.$refs.performanceMetrics) {
+        this.$refs.performanceMetrics.fetchPerformanceData();
       }
     }
   },
@@ -258,6 +262,7 @@ export default {
 .winner-cell { background: rgba(255, 215, 0, 0.4) !important; box-shadow: 0 0 12px gold, inset 0 0 5px rgba(255,255,255,0.3) !important; animation: pulseWinner 1.2s infinite; transform: scale(1.05); }
 @keyframes pulseWinner { 0%, 100% { transform: scale(1.05); box-shadow: 0 0 12px gold, inset 0 0 5px rgba(255,255,255,0.3); } 50% { transform: scale(1.15); box-shadow: 0 0 20px #ffec80, inset 0 0 8px rgba(255,255,255,0.5); } }
 .clear-btn { margin-top: 1rem; }
+.update-perf-btn { margin-top: 1rem; margin-left: 1rem; }
 .loading { color: white; font-size: 1.3rem; text-align: center; padding: 2rem; font-style: italic; }
 .game-result { position: relative; width: 100%; max-width: 450px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center; border-radius: 12px; backdrop-filter: blur(5px); }
 .winner-message { background: rgba(40, 130, 40, 0.8); padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }

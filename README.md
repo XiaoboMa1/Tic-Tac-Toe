@@ -4,7 +4,7 @@ A full-stack Tic-Tac-Toe application featuring algorithmic improvements, statefu
 
 ## 🌐 Play Online
 
-[**Play Here**](https://tic-tac-toe-ingn.onrender.com/)
+[**Play Here**](https://tic-tac-toe-1-fr16.onrender.com)
 
 Just migrated from Azure to Render for cost-efficiency, so please bear with the wait before the start since it's now running on a free server!
 

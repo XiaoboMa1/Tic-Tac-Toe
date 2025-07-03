@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.example.oxo.model.MoveException;
+import com.example.oxo.model.Player;
 import com.example.oxo.service.CachedGameService;
 import com.example.oxo.service.GameService;
 import com.example.oxo.service.OptimizedGameService;
@@ -26,39 +27,50 @@ public class BenchmarkDemonstrator {
     }
 
     /**
-     * [最终修复版] 演示算法优化效果。
-     * 此版本在一个预先填充了数据的、有意义的棋盘上进行测试，以测量算法在真实负载下的性能。
-     * 场景：在一个19x19的棋盘上，一条线上已经有4颗连续的棋子，我们测量落下第5颗致胜棋子时的检查效率。
+     * [修复版] 演示算法优化效果。
+     * 使用更复杂的测试场景来真实测量算法性能差异。
      */
     private static Map<String, Object> runAlgorithmBenchmark() {
         final int boardSize = 19;
         final int winThreshold = 5;
-        final int samples = 5000; // 增加样本量以获得更稳定的平均值
+        final int samples = 1000; // 减少样本量但增加场景复杂度
 
-        // --- 准备一个有意义的测试场景 ---
+        // --- 准备一个更复杂的测试场景 ---
         final int testRow = boardSize / 2;
         final int testCol = boardSize / 2;
 
         // 1. 原始算法测试 (GameService)
         GameService originalService = new GameService();
-        // 必须先设置玩家，否则无法落子
         originalService.setPlayers(2); 
         originalService.setBoardSize(boardSize, boardSize);
         originalService.getGameModel().setWinThreshold(winThreshold);
-        // 预先填充棋盘，在(testRow, testCol)左侧形成一条水平的4连子
-        for (int i = 1; i < winThreshold; i++) {
-            originalService.getGameModel().setCellOwner(testRow, testCol - i, originalService.getGameModel().getPlayerByNumber(0));
+        
+        // 创建更复杂的棋盘布局 - 多条近似获胜线
+        Player player1 = originalService.getGameModel().getPlayerByNumber(0);
+        Player player2 = originalService.getGameModel().getPlayerByNumber(1);
+        
+        // 在棋盘上放置更多棋子形成复杂的检查场景
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if ((i + j) % 3 == 0) {
+                    originalService.getGameModel().setCellOwner(i + 5, j + 5, player1);
+                } else if ((i + j) % 5 == 0) {
+                    originalService.getGameModel().setCellOwner(i + 5, j + 5, player2);
+                }
+            }
         }
 
         long originalTotalTime = 0;
-        // JIT预热：在正式计时前，先运行几轮让Java虚拟机优化代码
-        for (int i = 0; i < 10000; i++) {
+        // JIT预热
+        for (int i = 0; i < 1000; i++) {
             originalService.checkForWinner(testRow, testCol);
         }
-        // 正式测量
+        // 正式测量 - 测试不同位置
         for (int i = 0; i < samples; i++) {
+            int testR = (testRow + i % 5) % boardSize;
+            int testC = (testCol + i % 7) % boardSize;
             long start = System.nanoTime();
-            originalService.checkForWinner(testRow, testCol);
+            originalService.checkForWinner(testR, testC);
             originalTotalTime += (System.nanoTime() - start);
         }
         long originalAvg = originalTotalTime / samples;
@@ -68,20 +80,31 @@ public class BenchmarkDemonstrator {
         optimizedService.setPlayers(2);
         optimizedService.setBoardSize(boardSize, boardSize);
         optimizedService.getGameModel().setWinThreshold(winThreshold);
-        // 同样预先填充棋盘
-        for (int i = 1; i < winThreshold; i++) {
-            optimizedService.getGameModel().setCellOwner(testRow, testCol - i, optimizedService.getGameModel().getPlayerByNumber(0));
+        
+        // 同样的复杂棋盘布局
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if ((i + j) % 3 == 0) {
+                    optimizedService.getGameModel().setCellOwner(i + 5, j + 5, 
+                        optimizedService.getGameModel().getPlayerByNumber(0));
+                } else if ((i + j) % 5 == 0) {
+                    optimizedService.getGameModel().setCellOwner(i + 5, j + 5, 
+                        optimizedService.getGameModel().getPlayerByNumber(1));
+                }
+            }
         }
 
         long optimizedTotalTime = 0;
         // JIT预热
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             optimizedService.checkForWinner(testRow, testCol);
         }
-        // 正式测量
+        // 正式测量 - 相同的测试位置
         for (int i = 0; i < samples; i++) {
+            int testR = (testRow + i % 5) % boardSize;
+            int testC = (testCol + i % 7) % boardSize;
             long start = System.nanoTime();
-            optimizedService.checkForWinner(testRow, testCol);
+            optimizedService.checkForWinner(testR, testC);
             optimizedTotalTime += (System.nanoTime() - start);
         }
         long optimizedAvg = optimizedTotalTime / samples;
@@ -92,60 +115,85 @@ public class BenchmarkDemonstrator {
         algoResults.put("samples", samples);
         algoResults.put("originalTimeNs", originalAvg);
         algoResults.put("optimizedTimeNs", optimizedAvg);
-        // 确保 originalAvg 不为0，避免除零错误
-        double improvement = (originalAvg > 0) ? (100.0 * (originalAvg - optimizedAvg) / originalAvg) : 0;
+        
+        // 修复性能提升计算，确保结果合理
+        double improvement;
+        if (originalAvg > 0 && optimizedAvg > 0) {
+            improvement = 100.0 * (originalAvg - optimizedAvg) / originalAvg;
+        } else {
+            improvement = 0.0;
+        }
         algoResults.put("improvementPercent", improvement);
 
         return algoResults;
     }
 
     /**
-     * 演示缓存优化效果。
-     * 这个测试的逻辑是正确的，因为它模拟了“读多写少”的场景。
-     * 为确保健壮性，我们添加了必要的 setPlayers 调用。
+     * [修复版] 演示缓存优化效果。
+     * 修改测试模式为真正的"读多写少"场景。
      */
     private static Map<String, Object> runCacheBenchmark() throws MoveException {
         final int readIterations = 1000;
+        final int writeOperations = 10; // 增加多次写操作来模拟真实游戏
 
         // 1. 无缓存服务 (使用 OptimizedGameService 作为基线)
         OptimizedGameService noCacheService = new OptimizedGameService();
         noCacheService.setPlayers(2);
         noCacheService.setBoardSize(5, 5);
-        noCacheService.handleIncomingCommand("a1"); // 一次写操作
-
+        
         long noCacheTotalTime = 0;
-        for (int i = 0; i < readIterations; i++) {
-            long start = System.nanoTime();
-            noCacheService.getGameState(); // 每次都重新计算
-            noCacheTotalTime += (System.nanoTime() - start);
+        // 模拟真实游戏场景：多次写操作，每次写操作后多次读操作
+        for (int w = 0; w < writeOperations; w++) {
+            // 写操作
+            String command = (char)('a' + w % 5) + String.valueOf((w % 5) + 1);
+            try {
+                noCacheService.handleIncomingCommand(command);
+            } catch (Exception e) {
+                // 忽略无效移动
+            }
+            
+            // 多次读操作
+            for (int r = 0; r < readIterations / writeOperations; r++) {
+                long start = System.nanoTime();
+                noCacheService.getGameState();
+                noCacheTotalTime += (System.nanoTime() - start);
+            }
         }
 
         // 2. 有缓存服务
         CachedGameService cacheService = new CachedGameService();
         cacheService.setPlayers(2);
         cacheService.setBoardSize(5, 5);
-        cacheService.handleIncomingCommand("a1"); // 写操作，使缓存失效并准备下一次读取
 
         long cacheTotalTime = 0;
-        // 第一次读，是 cache miss，但会填充缓存
-        long firstReadStart = System.nanoTime();
-        cacheService.getGameState();
-        cacheTotalTime += (System.nanoTime() - firstReadStart);
-
-        // 后续的读，都应该是 cache hit
-        for (int i = 1; i < readIterations; i++) {
-            long start = System.nanoTime();
-            cacheService.getGameState();
-            cacheTotalTime += (System.nanoTime() - start);
+        // 相同的测试模式
+        for (int w = 0; w < writeOperations; w++) {
+            // 写操作（导致缓存失效）
+            String command = (char)('a' + w % 5) + String.valueOf((w % 5) + 1);
+            try {
+                cacheService.handleIncomingCommand(command);
+            } catch (Exception e) {
+                // 忽略无效移动
+            }
+            
+            // 多次读操作（第一次是cache miss，后续是cache hit）
+            for (int r = 0; r < readIterations / writeOperations; r++) {
+                long start = System.nanoTime();
+                cacheService.getGameState();
+                cacheTotalTime += (System.nanoTime() - start);
+            }
         }
 
         // 3. 组装结果
         Map<String, Object> cacheResults = new HashMap<>();
         cacheResults.put("readIterations", readIterations);
+        cacheResults.put("writeOperations", writeOperations);
         cacheResults.put("noCacheTimeNs", noCacheTotalTime);
         cacheResults.put("withCacheTimeNs", cacheTotalTime);
         cacheResults.put("cacheStats", cacheService.getCacheStats());
-        double improvement = (noCacheTotalTime > 0) ? (100.0 * (noCacheTotalTime - cacheTotalTime) / noCacheTotalTime) : 0;
+        
+        double improvement = (noCacheTotalTime > 0) ? 
+            (100.0 * (noCacheTotalTime - cacheTotalTime) / noCacheTotalTime) : 0;
         cacheResults.put("improvementPercent", improvement);
 
         return cacheResults;
