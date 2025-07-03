@@ -10,7 +10,7 @@ public class OptimizedGameService extends GameService {
     };
     
     @Override
-    protected boolean checkForWinner(int row, int col) {
+    public boolean checkForWinner(int row, int col) {
         char targetLetter = super.getCurrentPlayerLetter(); // Use super or this, ensure visibility
         int winThreshold = super.getGameModel().getWinThreshold(); // Use getter or ensure visibility
         

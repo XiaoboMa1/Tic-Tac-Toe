@@ -1,6 +1,6 @@
 package com.example.oxo.controller;
 
-import com.example.oxo.benchmark.PerformanceBenchmark;
+import com.example.oxo.benchmark.BenchmarkDemonstrator; // 导入新的演示类
 import com.example.oxo.model.MoveException;
 import com.example.oxo.monitoring.PerformanceStats;
 import com.example.oxo.service.CachedGameService;
@@ -29,10 +29,9 @@ public class GameController {
     public Object getPerformanceStats() {
         long start = System.currentTimeMillis();
         try {
-            Map<String, Object> result = performanceStats.getStats(); // performanceStats.getStats() already returns a Map
+            Map<String, Object> result = performanceStats.getStats();
             if (gameService instanceof CachedGameService) {
                 CachedGameService cachedService = (CachedGameService) gameService;
-                // Ensure 'result' is mutable or create a new map if it's not
                 Map<String, Object> mutableResult = new HashMap<>(result);
                 mutableResult.put("cacheStats", cachedService.getCacheStats());
                 return mutableResult;
@@ -44,29 +43,33 @@ public class GameController {
         }
     }
     
-    @GetMapping("/benchmark")
-    public ResponseEntity<Object> runBenchmarkController(@RequestParam(defaultValue = "10") int iterations) {
-        // To test quickly, you might temporarily hardcode iterations here:
-        // int testIterations = 1; // For quick testing
-        // System.out.println("Running benchmark with iterations: " + testIterations); // Log actual iterations
-        System.out.println("Received /benchmark request with iterations: " + iterations);
-
+    /**
+     * [新增] 统一的性能优化演示端点。
+     * 该端点会运行一系列精心设计的基准测试，
+     * 用于清晰地展示算法优化和缓存策略带来的性能提升。
+     * 返回的结果可以直接在前端进行结构化展示。
+     */
+    @GetMapping("/run-demonstration")
+    public ResponseEntity<Object> runDemonstration() {
         long controllerCallStartMs = System.currentTimeMillis();
         try {
-            Map<String, Object> benchmarkData = PerformanceBenchmark.runBenchmark(iterations); // Call with received/test iterations
-            System.out.println("Benchmark execution completed. Returning results.");
-            performanceStats.recordApiCall("runBenchmark", System.currentTimeMillis() - controllerCallStartMs);
+            System.out.println("Running unified performance demonstration...");
+            // 调用新的、统一的演示器来执行所有基准测试
+            Map<String, Object> benchmarkData = BenchmarkDemonstrator.run();
+            System.out.println("Demonstration completed. Returning structured results.");
+            performanceStats.recordApiCall("runDemonstration", System.currentTimeMillis() - controllerCallStartMs);
             return ResponseEntity.ok(benchmarkData);
         } catch (Exception e) {
-            System.err.println("GameController: Critical error during /benchmark endpoint execution: " + e.getMessage());
+            System.err.println("GameController: Critical error during /run-demonstration endpoint execution: " + e.getMessage());
             e.printStackTrace();
-            performanceStats.recordApiCall("runBenchmark_Error", System.currentTimeMillis() - controllerCallStartMs);
+            performanceStats.recordApiCall("runDemonstration_Error", System.currentTimeMillis() - controllerCallStartMs);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(Map.of("error", "Benchmark execution failed due to an internal server error: " + e.getMessage()));
+                                 .body(Map.of("error", "Demonstration execution failed due to an internal server error: " + e.getMessage()));
         }
-        // finally block was here, but duration recording is better done before returning or in catch.
     }
     
+    // --- 旧的 /benchmark 和 /winCheckBenchmark 端点已被移除 ---
+
     /** 获取当前棋局状态（玩家信息、棋盘、当前玩家、赢家等） */
     @GetMapping("/state")
     public Object getGameState() {
@@ -87,12 +90,10 @@ public class GameController {
             gameService.handleIncomingCommand(request.getCommand());
             return ResponseEntity.ok(gameService.getGameState());
         } catch (MoveException e) {
-            // 返回400错误 + JSON格式错误信息
             return ResponseEntity.badRequest().body(
                     Map.of("error", "Invalid Move: " + e.getMessage())
             );
         } catch (Exception e) {
-            // 捕获其他未处理的异常，返回500 错误
             return ResponseEntity.internalServerError().body(
                     Map.of("error", "Internal server error: " + e.getMessage())
             );
@@ -137,23 +138,6 @@ public class GameController {
         } finally {
             long duration = System.currentTimeMillis() - start;
             performanceStats.recordApiCall("resetGame", duration);
-        }
-    }
-    @GetMapping("/winCheckBenchmark")
-    public ResponseEntity<Object> runWinCheckBenchmarkController() {
-        long controllerCallStartMs = System.currentTimeMillis();
-        try {
-            System.out.println("Running win-checking algorithm benchmark...");
-            Map<String, Object> benchmarkData = PerformanceBenchmark.runWinCheckingBenchmark();
-            System.out.println("Win-checking benchmark completed. Returning results.");
-            performanceStats.recordApiCall("runWinCheckBenchmark", System.currentTimeMillis() - controllerCallStartMs);
-            return ResponseEntity.ok(benchmarkData);
-        } catch (Exception e) {
-            System.err.println("GameController: Error during win-checking benchmark: " + e.getMessage());
-            e.printStackTrace();
-            performanceStats.recordApiCall("runWinCheckBenchmark_Error", System.currentTimeMillis() - controllerCallStartMs);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(Map.of("error", "Win-checking benchmark failed: " + e.getMessage()));
         }
     }
 }

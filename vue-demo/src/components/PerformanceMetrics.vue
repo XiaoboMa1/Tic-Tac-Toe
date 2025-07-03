@@ -118,22 +118,21 @@ export default {
       }
     },
     
+    // In PerformanceMetrics.vue <script> methods
     async runBenchmark() {
       if (this.benchmarking) return;
       try {
         this.benchmarking = true;
         this.benchmarkResults = null; // Clear previous results
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/benchmark?iterations=20`);
+        // 调用新的统一端点
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/run-demonstration`);
         if (!response.ok) {
           throw new Error(`HTTP error: ${response.status}`);
         }
         this.benchmarkResults = await response.json();
-        this.$nextTick(() => { // Ensure DOM is updated before scrolling
-          document.querySelector('.benchmark-results')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
+        // ...
       } catch (error) {
-        console.error('Performance test failed:', error);
-        alert('Performance test failed. Please check console logs.');
+        // ...
       } finally {
         this.benchmarking = false;
       }

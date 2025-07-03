@@ -216,7 +216,7 @@ public class GameService {
 		return true;
 	}
 
-	protected boolean checkForWinner(int row, int col) { // Made protected for OptimizedGameService
+	public boolean checkForWinner(int row, int col) { 
 		if (checkVerticalWin(col)) return true;
 		if (checkHorizontalWin(row)) return true;
 		return checkDiagonalWin(row, col);

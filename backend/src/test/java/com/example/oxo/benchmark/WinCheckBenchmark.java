@@ -1,13 +1,15 @@
 package com.example.oxo.benchmark;
 
-import com.example.oxo.model.GameModel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 import com.example.oxo.model.MoveException;
-import com.example.oxo.model.Player;
 import com.example.oxo.service.GameService;
 import com.example.oxo.service.OptimizedGameService;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class WinCheckBenchmark {
 
@@ -16,7 +18,7 @@ public class WinCheckBenchmark {
         private final List<Long> checkForWinnerTimes = new ArrayList<>();
         
         @Override
-        protected boolean checkForWinner(int row, int col) {
+        public boolean checkForWinner(int row, int col) {
             long startTime = System.nanoTime();
             boolean result = super.checkForWinner(row, col);
             long endTime = System.nanoTime();
@@ -48,7 +50,7 @@ public class WinCheckBenchmark {
         private final List<Long> checkForWinnerTimes = new ArrayList<>();
         
         @Override
-        protected boolean checkForWinner(int row, int col) {
+        public boolean checkForWinner(int row, int col) {
             long startTime = System.nanoTime();
             boolean result = super.checkForWinner(row, col);
             long endTime = System.nanoTime();
