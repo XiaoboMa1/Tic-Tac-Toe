@@ -20,7 +20,6 @@ Just migrated from Azure to Render for cost-efficiency, so please bear with the 
 - O(k) Win-Detection: Optimized win-checking logic from a naive O(n²) board scan to a targeted O(k) directional check from the last move.
 - In-Memory Caching: A lightweight, stateful cache using a dirty-checking mechanism reduces redundant state calculations.
 - Live Performance Dashboard: Visualizes real-time backend metrics.
-- On-Demand Benchmarking: Triggers a live backend test to compare the performance of the original vs. optimized algorithms, displaying the results directly in the UI.
 
 ## 🕹️ How to Play
 
@@ -28,32 +27,16 @@ Just migrated from Azure to Render for cost-efficiency, so please bear with the 
 2.  **Gameplay**: Click on any empty cell to make a move.
 3.  **Reset**: Click "Clear Board" to start a new game.
 
-### Performance Monitoring Panel
+#### Performance Monitoring Panel
 
-This dashboard provides a transparent look into the backend's performance. All metrics are generated and served by the Spring Boot application.
+A transparent look into the backend's performance.
 
-- API Call Statistics:
-    - How it works: The backend `PerformanceStats.java` component intercepts each API call in `GameController.java`. It uses `System.currentTimeMillis()` to time the execution of each endpoint and aggregates the data in a `ConcurrentHashMap`.
-    - Metrics:
-        *   `Call Count`: Total hits for each endpoint.
-        *   `Avg. Response (ms)`: Average execution time.
-        *   `Max Response (ms)`: The highest execution time recorded.
+*   **Live API & Cache Metrics**: The top cards display live server statistics.
+    *   **API Calls & Uptime**: These metrics update with every move.
+    *   **Cache Status**: This shows the real-time state of the `CachedGameService`. Note that the panel updates only after game-altering actions (like "Clear Board") or by clicking "Update Performance Data", not during every move, to maintain a clean UI.
 
-- Server Uptime:
-    - How it works: `PerformanceStats.java` records the application's start time and calculates the duration to the current time.
-
-- Cache Status:
-    - How it works: The `CachedGameService.java` uses an `AtomicBoolean` as a dirty flag. A **cache hit** occurs when a game state is requested and the flag is clean. A **cache miss** occurs if the state has been modified (e.g., after a move), forcing re-computation.
-    - Metrics:
-        *   `Cache Hit Rate`: The percentage of requests served directly from the cache.
-        *   `Cache Hits / Misses`: The raw count for each outcome.
-
-- Run Performance Test:
-    - How it works: This button triggers the `/benchmark` endpoint. The backend's `PerformanceBenchmark.java` then simulates game sessions, executing moves using both the unoptimized O(n²) algorithm (`GameService`) and the optimized O(k) algorithm (`OptimizedGameService`, k=win-threshold). It measures the average execution time in nanoseconds for each.
-    - Metrics:
-        *   `Original Algorithm (ns)`: Average execution time for the slow, full-board scan.
-        *   `Optimized Algorithm (ns)`: Average execution time for the fast, directional check.
-        *   `Performance Improvement`: The percentage reduction in execution time.
+*   **On-Demand Performance Demonstration**: The "Run Performance Demonstration" button triggers a backend process to present the optimization impacts.
+    *   **How it works**: This is not a live benchmark, but a controlled simulation using script to model the baseline performance. Simulation is necessary as live micro-benchmarks in free cloud environments are notoriously unreliable due to JVM JIT/GC and server load variations. A controlled simulation provides a **consistent, noise-free** demonstration of the underlying architectural improvements..
 
 ## 🛠️ Local Deployment
 
