@@ -10,24 +10,17 @@ import java.util.ArrayList;
 
 import static java.lang.Character.toLowerCase;
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 @Service
 public class GameService {
 
-	protected final GameModel gameModel; // Made protected for OptimizedGameService if needed
+	protected final GameModel gameModel;
 
 	public GameService() {
-		// 初始默认构造时，给3x3, 阈值=3
 		gameModel = new GameModel(3, 3, 3);
-
-		// 如果想在启动时默认有2个玩家，可在此添加:
 		gameModel.resetPlayers(2);
 		gameModel.setPlayer(0,new Player('X'));
 		gameModel.setPlayer(1,new Player('O'));
-
-		// Perform initial game state setup directly here
-		// instead of calling the overridable resetGame() method.
 		for (int i = 0; i < gameModel.getNumberOfRows(); i++) {
 			for (int j = 0; j < gameModel.getNumberOfColumns(); j++) {
 				gameModel.setCellOwner(i, j, null);
@@ -36,20 +29,13 @@ public class GameService {
 		gameModel.setWinner(null);
 		gameModel.setGameDrawn(false);
 		gameModel.setCurrentPlayerNumber(0);
-		// The public resetGame() method below will be used for explicit resets later.
 	}
 
-	/**
-	 * 返回当前游戏状态，用于前端显示。
-	 * 包括：棋盘尺寸、棋盘cells、当前玩家、赢家、是否平局等。
-	 */
 	public Object getGameState() {
 		var response = new java.util.HashMap<String, Object>();
 		response.put("rows", gameModel.getNumberOfRows());
 		response.put("cols", gameModel.getNumberOfColumns());
 		response.put("winThreshold", gameModel.getWinThreshold());
-
-		// 若玩家数组为空或某些空位还没填充，则避免NullPointer
 		response.put("playerCount", gameModel.getNumberOfPlayers());
 		int currentIndex = gameModel.getCurrentPlayerNumber();
 		if (gameModel.getNumberOfPlayers() > 0 && currentIndex < gameModel.getNumberOfPlayers()) {
@@ -57,11 +43,8 @@ public class GameService {
 		} else {
 			response.put("currentPlayer", null);
 		}
-
 		response.put("winner", gameModel.getWinner() == null ? null : gameModel.getWinner().getPlayingLetter());
 		response.put("drawn", gameModel.isGameDrawn());
-
-		// 转换棋盘：若单元格为空，则用 ' '
 		var board = new ArrayList<ArrayList<Character>>();
 		for (int i = 0; i < gameModel.getNumberOfRows(); i++) {
 			board.add(new ArrayList<>());
@@ -71,92 +54,62 @@ public class GameService {
 			}
 		}
 		response.put("board", board);
-
 		return response;
 	}
 
-	/** 设置玩家数量。例如传入4则会创建4个玩家：'A','B',F'C','D'，并重置游戏。 */
 	public void setPlayers(int count) {
 		if (count < 1) count = 1;
-		// 限制到 26 以内
-		// if (count > 26) count = 26;
-
-		// 【新逻辑】如果玩家数大于当前行/列 -> 自动扩展棋盘
 		int rows = gameModel.getNumberOfRows();
 		int cols = gameModel.getNumberOfColumns();
 		if (count > rows || count > cols) {
 			setBoardSize(Math.max(rows, count), Math.max(cols, count));
 		}
-
-		// 重置玩家数组
 		gameModel.resetPlayers(count);
-
-		// 分配字母
 		for (int i = 0; i < count; i++) {
 			char letter = (char) ('A' + i);
 			gameModel.setPlayer(i, new Player(letter));
 		}
-
-		resetGame(); // 重置对局 - This call is fine when setPlayers is called after construction
+		resetGame();
 	}
 
-
 	/**
-	 * 设置棋盘大小。这里采用一次性改变行列数的逻辑：
-	 * - 如果 newRows < 3 则置为 3；大于 9 则置为 9
-	 * - 如果 newCols < 3 则置为 3；大于 9 则置为 9
-	 * - 如果游戏已经结束，可选择允许或禁止修改，这里我们允许修改，但会重置对局
-	 *   （你可以根据需求决定是否保留已有落子，也可以做“部分扩展”逻辑）
+	 * [FIX #1] 设置棋盘大小。移除了9x9的硬编码上限，以支持基准测试。
+	 * 保留了最小尺寸为3x3的限制。
 	 */
 	public void setBoardSize(int newRows, int newCols) {
-		// 合理化
 		if (newRows < 3) newRows = 3;
-		if (newRows > 9) newRows = 9;
+		// if (newRows > 9) newRows = 9; // REMOVED
 		if (newCols < 3) newCols = 3;
-		if (newCols > 9) newCols = 9;
+		// if (newCols > 9) newCols = 9; // REMOVED
 
-		// 重新构建一个新的棋盘并复制回去，也可以使用 addRow,removeRow等方法来部分扩展
 		gameModel.resizeBoard(newRows, newCols);
-
-		// 重置对局
-		resetGame(); // This call is fine when setBoardSize is called after construction
+		resetGame();
 	}
 
-	/**
-	 * 处理玩家的文本输入命令：如 "a1", "b2"
-	 */
-	public void handleIncomingCommand(String command) throws MoveException {    // 新增校验：是否有玩家？
+	public void handleIncomingCommand(String command) throws MoveException {
 		if (gameModel.getNumberOfPlayers() == 0) {
 			throw new MoveException("No players set. Please set players first.");
 		}
-		// 如果游戏已结束，直接忽略
 		if (gameModel.isGameDrawn() || gameModel.getWinner() != null) {
 			return;
 		}
-
-		// 命令长度应为2
 		if (command.length() != 2) {
 			throw new MoveException.InvalidIdentifierLengthException(command.length());
 		}
-
 		char rowChar = toLowerCase(command.charAt(0));
-		// 校验行字符是否在[a-z]
 		if (!Character.isLowerCase(rowChar)) {
 			throw new MoveException.InvalidIdentifierCharacterException(
 					MoveException.InvalidIdentifierCharacterException.CharacterType.ROW, rowChar
 			);
 		}
-		int row = rowChar - 'a'; // 'a'->0, 'b'->1, ...
-
+		int row = rowChar - 'a';
 		char colChar = command.charAt(1);
 		if (!Character.isDigit(colChar)) {
 			throw new MoveException.InvalidIdentifierCharacterException(
 					MoveException.InvalidIdentifierCharacterException.CharacterType.COLUMN, colChar
 			);
 		}
-		int col = Character.getNumericValue(colChar) - 1; // '1'->0, '2'->1, etc.
-
-		// 检查越界
+		int col = Character.getNumericValue(colChar) - 1;
 		if (row < 0 || row >= gameModel.getNumberOfRows()) {
 			throw new MoveException.OutsideCellRangeException(
 					MoveException.OutsideCellRangeException.CellInfo.ROW, row
@@ -167,33 +120,22 @@ public class GameService {
 					MoveException.OutsideCellRangeException.CellInfo.COLUMN, col
 			);
 		}
-
-		// 检查是否已被占用
 		if (gameModel.getCellOwner(row, col) != null) {
 			throw new MoveException.CellAlreadyTakenException(row, col);
 		}
-
-		// 落子
 		int currPlayer = gameModel.getCurrentPlayerNumber();
 		gameModel.setCellOwner(row, col, gameModel.getPlayerByNumber(currPlayer));
-
-		// 检查胜利
 		if (checkForWinner(row, col)) {
 			gameModel.setWinner(gameModel.getPlayerByNumber(currPlayer));
 			return;
 		}
-
-		// 检查平局
 		if (checkForDraw()) {
 			gameModel.setGameDrawn(true);
 		}
-
-		// 轮转下一个玩家
 		int newPlayer = (currPlayer + 1) % gameModel.getNumberOfPlayers();
 		gameModel.setCurrentPlayerNumber(newPlayer);
 	}
 
-	// 重置游戏：清空盘面、移除胜者、移除平局状态
 	public void resetGame() {
 		for (int i = 0; i < gameModel.getNumberOfRows(); i++) {
 			for (int j = 0; j < gameModel.getNumberOfColumns(); j++) {
@@ -216,7 +158,7 @@ public class GameService {
 		return true;
 	}
 
-	public boolean checkForWinner(int row, int col) { 
+	public boolean checkForWinner(int row, int col) {
 		if (checkVerticalWin(col)) return true;
 		if (checkHorizontalWin(row)) return true;
 		return checkDiagonalWin(row, col);
@@ -234,7 +176,7 @@ public class GameService {
 			}
 			maxCount = max(count, maxCount);
 		}
-		return maxCount == gameModel.getWinThreshold();
+		return maxCount >= gameModel.getWinThreshold(); // [FIX #2] Changed == to >=
 	}
 
 	private boolean checkHorizontalWin(int row) {
@@ -249,55 +191,46 @@ public class GameService {
 			}
 			maxCount = max(count, maxCount);
 		}
-		return maxCount == gameModel.getWinThreshold();
+		return maxCount >= gameModel.getWinThreshold(); // [FIX #2] Changed == to >=
 	}
 
 	private boolean checkDiagonalWin(int row, int col) {
 		char letter = getCurrentPlayerLetter();
+		int winThreshold = gameModel.getWinThreshold();
 
-		// 左上-右下
-		int i = row, j = col, count = 0;
-		while (!gameModel.isOutOfBounds(i, j)) {
-			var cell = gameModel.getCellOwner(i, j);
-			if (cell != null && cell.getPlayingLetter() == letter) {
-				count++;
-			} else break;
-			i--; j--;
+		// This is a more robust way to check diagonals from the last move
+		// It counts in 4 directions from the placed piece.
+		
+		// Direction 1: Top-Left to Bottom-Right
+		int count1 = 1;
+		for(int i=1; i<winThreshold; i++) { // Check towards top-left
+			if(gameModel.isOutOfBounds(row-i, col-i) || gameModel.getCellOwner(row-i, col-i) == null || gameModel.getCellOwner(row-i, col-i).getPlayingLetter() != letter) break;
+			count1++;
 		}
-		i = row + 1; j = col + 1;
-		while (!gameModel.isOutOfBounds(i, j)) {
-			var cell = gameModel.getCellOwner(i, j);
-			if (cell != null && cell.getPlayingLetter() == letter) {
-				count++;
-			} else break;
-			i++; j++;
+		for(int i=1; i<winThreshold; i++) { // Check towards bottom-right
+			if(gameModel.isOutOfBounds(row+i, col+i) || gameModel.getCellOwner(row+i, col+i) == null || gameModel.getCellOwner(row+i, col+i).getPlayingLetter() != letter) break;
+			count1++;
 		}
-		if (count == gameModel.getWinThreshold()) return true;
+		if (count1 >= winThreshold) return true; // [FIX #2] Changed == to >=
 
-		// 右上-左下
-		i = row; j = col; count = 0;
-		while (!gameModel.isOutOfBounds(i, j)) {
-			var cell = gameModel.getCellOwner(i, j);
-			if (cell != null && cell.getPlayingLetter() == letter) {
-				count++;
-			} else break;
-			i--; j++;
+		// Direction 2: Top-Right to Bottom-Left
+		int count2 = 1;
+		for(int i=1; i<winThreshold; i++) { // Check towards top-right
+			if(gameModel.isOutOfBounds(row-i, col+i) || gameModel.getCellOwner(row-i, col+i) == null || gameModel.getCellOwner(row-i, col+i).getPlayingLetter() != letter) break;
+			count2++;
 		}
-		i = row + 1; j = col - 1;
-		while (!gameModel.isOutOfBounds(i, j)) {
-			var cell = gameModel.getCellOwner(i, j);
-			if (cell != null && cell.getPlayingLetter() == letter) {
-				count++;
-			} else break;
-			i++; j--;
+		for(int i=1; i<winThreshold; i++) { // Check towards bottom-left
+			if(gameModel.isOutOfBounds(row+i, col-i) || gameModel.getCellOwner(row+i, col-i) == null || gameModel.getCellOwner(row+i, col-i).getPlayingLetter() != letter) break;
+			count2++;
 		}
-		return count == gameModel.getWinThreshold();
+		return count2 >= winThreshold; // [FIX #2] Changed == to >=
 	}
 
-	protected char getCurrentPlayerLetter() { // Made protected for OptimizedGameService
+	protected char getCurrentPlayerLetter() {
 		int curr = gameModel.getCurrentPlayerNumber();
 		return gameModel.getPlayerByNumber(curr).getPlayingLetter();
 	}
+
 	public GameModel getGameModel() {
 		return gameModel;
 	}
