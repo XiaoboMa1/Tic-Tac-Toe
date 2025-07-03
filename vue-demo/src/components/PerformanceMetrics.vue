@@ -52,7 +52,7 @@
               <h3>Algorithm Performance (Win-Check)</h3>
               <div class="result-summary">
                 Performance Improvement: 
-                <span class="highlight">
+                <span class="highlight-green">
                   {{ benchmarkResults.algorithmBenchmark.improvementPercent.toFixed(2) }}%
                 </span>
               </div>
@@ -77,7 +77,7 @@
               <h3>Cache Performance (Read-Heavy Scenario)</h3>
               <div class="result-summary">
                 Performance Improvement: 
-                <span class="highlight">
+                <span class="highlight-green">
                   {{ benchmarkResults.cacheBenchmark.improvementPercent.toFixed(2) }}%
                 </span>
               </div>
@@ -113,67 +113,87 @@
   </div>
 </template>
 
-<script setup> // [FIX #1] Changed to script setup for easier defineExpose
-import { ref, onMounted, defineExpose } from 'vue';
+<script>
+export default {
+  data() {
+    return {
+      performanceData: null,
+      benchmarkResults: null,
+      loading: true,
+      benchmarking: false,
+      // intervalId: null // No longer needed
+    }
+  },
+  
+  mounted() {
+    this.fetchPerformanceData();
+    // [FIX] Removed setInterval. Updates will now be triggered by the parent.
+    // this.intervalId = setInterval(this.fetchPerformanceData, 30000);
+  },
 
-const performanceData = ref(null);
-const benchmarkResults = ref(null);
-const loading = ref(true);
-const benchmarking = ref(false);
-
-const fetchPerformanceData = async () => {
-  if (!performanceData.value) {
-    loading.value = true;
+  beforeUnmount() {
+    // [FIX] No interval to clear.
+    // clearInterval(this.intervalId);
+  },
+  
+  methods: {
+    async fetchPerformanceData() {
+      // No need to set loading to true here on every call, only on initial mount.
+      // This prevents the "Loading..." flicker on every game move.
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/performance`);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        this.performanceData = await response.json();
+      } catch (error) {
+        console.error('Failed to fetch performance data:', error);
+        this.performanceData = null;
+      } finally {
+        // Only set loading to false on the first load.
+        if (this.loading) {
+          this.loading = false;
+        }
+      }
+    },
+    
+    async runBenchmark() {
+      if (this.benchmarking) return;
+      try {
+        this.benchmarking = true;
+        this.benchmarkResults = null;
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/run-demonstration`);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        this.benchmarkResults = await response.json();
+      } catch (error) {
+        console.error('Failed to run benchmark:', error);
+        alert('Benchmark failed. Check console for details.');
+      } finally {
+        this.benchmarking = false;
+      }
+    },
+    
+    formatUptime(ms) {
+      if (typeof ms !== 'number' || ms < 0) return 'N/A';
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
   }
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/performance`);
-    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-    performanceData.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch performance data:', error);
-    performanceData.value = null;
-  } finally {
-    loading.value = false;
-  }
-};
-
-const runBenchmark = async () => {
-  if (benchmarking.value) return;
-  try {
-    benchmarking.value = true;
-    benchmarkResults.value = null;
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/run-demonstration`);
-    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-    benchmarkResults.value = await response.json();
-  } catch (error) {
-    console.error('Failed to run benchmark:', error);
-    alert('Benchmark failed. Check console for details.');
-  } finally {
-    benchmarking.value = false;
-  }
-};
-
-const formatUptime = (ms) => {
-  if (typeof ms !== 'number' || ms < 0) return 'N/A';
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours}h ${minutes}m ${seconds}s`;
-};
-
-onMounted(() => {
-  fetchPerformanceData();
-});
-
-// [FIX #2] Expose the refresh method to the parent component
-defineExpose({
-  fetchPerformanceData
-});
+}
 </script>
 
 <style scoped>
-/* Styles remain the same */
+/* Styles remain the same, but added a specific class for green highlight */
+.highlight-green {
+  color: #66bb6a; /* Softer green */
+  font-weight: bold;
+  font-size: 1.25rem;
+}
 .performance-metrics { margin-top: 2.5rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.6); border-radius: 12px; width: 100%; max-width: 800px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
 .performance-metrics h2 { text-align: center; margin-bottom: 1.5rem; color: #ffd700; font-size: 1.5rem; }
 .performance-metrics h3 { color: #f0e68c; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,215,0,0.3); padding-bottom: 0.5rem; }
@@ -188,7 +208,6 @@ th { color: #ffd700; font-weight: 600; }
 button:disabled { opacity: 0.6; cursor: not-allowed; background: linear-gradient(to bottom, #555, #333) !important; }
 .benchmark-results-container { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 .result-summary { font-size: 1.15rem; margin-bottom: 1.2rem; text-align: center; padding: 0.5rem; background-color: rgba(255,215,0,0.1); border-radius: 4px; }
-.highlight { color: #66bb6a; font-weight: bold; font-size: 1.25rem; }
 .loading-metrics { text-align: center; padding: 2rem; font-size: 1.2rem; font-style: italic; color: #ccc; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease-in-out; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

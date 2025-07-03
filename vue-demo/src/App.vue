@@ -2,7 +2,12 @@
   <div class="container">
     <header class="header">
       <h1>OXO Game</h1>
-      <a href="https://github.com/XiaoboMa1" target="_blank" rel="noopener noreferrer" class="github-link">
+      <a
+        href="https://github.com/XiaoboMa1"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="github-link"
+      >
         Visit GitHub
       </a>
     </header>
@@ -39,20 +44,62 @@
       </div>
 
       <div class="row input-group">
-        <input v-model="playerCountInput" type="number" min="2" max="9" placeholder="Number of Players" class="input-field" />
+        <input
+          v-model="playerCountInput"
+          type="number"
+          min="2"
+          max="9"
+          placeholder="Number of Players"
+          class="input-field"
+        />
         <button @click="setPlayers" class="animated-button">Set Players</button>
       </div>
 
       <div class="row input-group">
-        <input v-model="rowsInput" type="number" min="3" max="9" placeholder="Rows" class="input-field" />
-        <input v-model="colsInput" type="number" min="3" max="9" placeholder="Columns" class="input-field" />
+        <input
+          v-model="rowsInput"
+          type="number"
+          min="3"
+          max="9"
+          placeholder="Rows"
+          class="input-field"
+        />
+        <input
+          v-model="colsInput"
+          type="number"
+          min="3"
+          max="9"
+          placeholder="Columns"
+          class="input-field"
+        />
         <button @click="setBoardSize" class="animated-button">Set Board Size</button>
       </div>
 
       <Transition name="board-fade" appear>
-        <div class="board" :style="{ gridTemplateRows: `repeat(${gameState.rows}, 2.2rem)`, gridTemplateColumns: `repeat(${gameState.cols}, 2.2rem)`, opacity: gameState.winner || gameState.drawn ? 0.7 : 1, }" v-if="gameState.board">
-          <div v-for="(rowArr, rIdx) in gameState.board" :key="rIdx" style="display: contents;">
-            <div v-for="(cell, cIdx) in rowArr" :key="rIdx + '-' + cIdx" class="cell" :class="{ 'winner-cell': isWinningCell(rIdx, cIdx), 'occupied': cell !== ' ' }" @click="clickCell(rIdx, cIdx)">
+        <div
+          class="board"
+          :style="{
+            gridTemplateRows: `repeat(${gameState.rows}, 2.2rem)`,
+            gridTemplateColumns: `repeat(${gameState.cols}, 2.2rem)`,
+            opacity: gameState.winner || gameState.drawn ? 0.7 : 1,
+          }"
+          v-if="gameState.board"
+        >
+          <div
+            v-for="(rowArr, rIdx) in gameState.board"
+            :key="rIdx"
+            style="display: contents;"
+          >
+            <div
+              v-for="(cell, cIdx) in rowArr"
+              :key="rIdx + '-' + cIdx"
+              class="cell"
+              :class="{
+                'winner-cell': isWinningCell(rIdx, cIdx),
+                'occupied': cell !== ' '
+              }"
+              @click="clickCell(rIdx, cIdx)"
+            >
               {{ cell === ' ' ? '' : cell }}
             </div>
           </div>
@@ -63,125 +110,126 @@
         <button @click="resetBoard" class="clear-btn animated-button">Clear Board</button>
       </div>
       
-      <!-- [FIX #1] Add a ref to the component -->
-      <performance-metrics ref="performanceMetricsRef" />
+      <!-- [FIX #1] Add the 'ref' attribute to the component tag -->
+      <performance-metrics ref="performanceMetrics" />
     </div>
   </div>
 </template>
 
-<script setup> // [FIX #2] Changed to script setup
+<script>
 import { ref, reactive, onMounted } from 'vue';
 import PerformanceMetrics from './components/PerformanceMetrics.vue';
 
-const apiBase = import.meta.env.VITE_API_BASE_URL;
-const gameState = ref(null);
-const playerCountInput = ref('');
-const rowsInput = ref('');
-const colsInput = ref('');
-const winningCells = reactive([]);
-
-// [FIX #3] Create a ref to hold the PerformanceMetrics component instance
-const performanceMetricsRef = ref(null);
-
-const isWinningCell = (row, col) => {
-  if (!gameState.value || !gameState.value.winner) return false;
-  return winningCells.some(cell => cell.row === row && cell.col === col);
-};
-
-const calculateWinningPath = () => {
-  if (!gameState.value || !gameState.value.winner) {
-    winningCells.length = 0;
-    return;
-  }
-  const { board, rows, cols, winThreshold, winner: winnerLetter } = gameState.value;
-  winningCells.length = 0;
-  for (let r = 0; r < rows; r++) { for (let c = 0; c <= cols - winThreshold; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r][c + i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) winningCells.push({ row: r, col: c + i }); return; } } }
-  for (let c = 0; c < cols; c++) { for (let r = 0; r <= rows - winThreshold; r++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) winningCells.push({ row: r + i, col: c }); return; } } }
-  for (let r = 0; r <= rows - winThreshold; r++) { for (let c = 0; c <= cols - winThreshold; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c + i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) winningCells.push({ row: r + i, col: c + i }); return; } } }
-  for (let r = 0; r <= rows - winThreshold; r++) { for (let c = winThreshold - 1; c < cols; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c - i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) winningCells.push({ row: r + i, col: c - i }); return; } } }
-};
-
-async function fetchGameState() {
-  try {
-    const res = await fetch(`${apiBase}/state`);
-    gameState.value = await res.json();
-    calculateWinningPath();
-  } catch (err) {
-    console.error('Failed to fetch game state:', err);
+export default {
+  components: {
+    PerformanceMetrics
+  },
+  // [FIX #2] Use the standard Options API structure that you already have.
+  // We will add the logic inside data() and methods: {}
+  data() {
+    return {
+      gameState: null,
+      playerCountInput: '',
+      rowsInput: '',
+      colsInput: '',
+      winningCells: [],
+      apiBase: import.meta.env.VITE_API_BASE_URL
+    };
+  },
+  methods: {
+    isWinningCell(row, col) {
+      if (!this.gameState || !this.gameState.winner) return false;
+      return this.winningCells.some(cell => cell.row === row && cell.col === col);
+    },
+    calculateWinningPath() {
+      if (!this.gameState || !this.gameState.winner) {
+        this.winningCells.length = 0;
+        return;
+      }
+      const { board, rows, cols, winThreshold, winner: winnerLetter } = this.gameState;
+      this.winningCells.length = 0;
+      for (let r = 0; r < rows; r++) { for (let c = 0; c <= cols - winThreshold; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r][c + i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) this.winningCells.push({ row: r, col: c + i }); return; } } }
+      for (let c = 0; c < cols; c++) { for (let r = 0; r <= rows - winThreshold; r++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) this.winningCells.push({ row: r + i, col: c }); return; } } }
+      for (let r = 0; r <= rows - winThreshold; r++) { for (let c = 0; c <= cols - winThreshold; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c + i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) this.winningCells.push({ row: r + i, col: c + i }); return; } } }
+      for (let r = 0; r <= rows - winThreshold; r++) { for (let c = winThreshold - 1; c < cols; c++) { let allMatch = true; for (let i = 0; i < winThreshold; i++) { if (board[r + i][c - i] !== winnerLetter) { allMatch = false; break; } } if (allMatch) { for (let i = 0; i < winThreshold; i++) this.winningCells.push({ row: r + i, col: c - i }); return; } } }
+    },
+    async fetchGameState() {
+      try {
+        const res = await fetch(`${this.apiBase}/state`);
+        this.gameState = await res.json();
+        this.calculateWinningPath();
+      } catch (err) {
+        console.error('Failed to fetch game state:', err);
+      }
+    },
+    async resetBoard() {
+      try {
+        const res = await fetch(`${this.apiBase}/reset`, { method: 'POST' });
+        this.gameState = await res.json();
+        this.winningCells.length = 0;
+        // [FIX #3] Call the child component's method via this.$refs
+        this.$refs.performanceMetrics.fetchPerformanceData();
+      } catch (err) {
+        console.error('Failed to reset board:', err);
+      }
+    },
+    async setPlayers() {
+      if (!this.playerCountInput) return;
+      try {
+        const count = parseInt(this.playerCountInput);
+        if (isNaN(count) || count < 2 || count > 9) { alert('Please enter a player count between 2 and 9.'); return; }
+        const res = await fetch(`${this.apiBase}/setPlayers?count=${count}`, { method: 'POST' });
+        this.gameState = await res.json();
+        this.playerCountInput = '';
+        this.$refs.performanceMetrics.fetchPerformanceData();
+      } catch (err) {
+        console.error('Failed to set players:', err);
+      }
+    },
+    async setBoardSize() {
+      if (!this.rowsInput || !this.colsInput) return;
+      try {
+        const rows = parseInt(this.rowsInput);
+        const cols = parseInt(this.colsInput);
+        if (isNaN(rows) || rows < 3 || rows > 9 || isNaN(cols) || cols < 3 || cols > 9) { alert('Rows and columns must be between 3 and 9.'); return; }
+        const res = await fetch(`${this.apiBase}/setSize?rows=${rows}&cols=${cols}`, { method: 'POST' });
+        this.gameState = await res.json();
+        this.rowsInput = '';
+        this.colsInput = '';
+        this.$refs.performanceMetrics.fetchPerformanceData();
+      } catch (err) {
+        console.error('Failed to set board size:', err);
+      }
+    },
+    async clickCell(rIdx, cIdx) {
+      if (this.gameState.winner || this.gameState.drawn) return;
+      try {
+        if (this.gameState.board[rIdx][cIdx] !== ' ') { alert("This cell is already occupied. Please choose an empty cell!"); return; }
+        const command = `${String.fromCharCode('a'.charCodeAt(0) + rIdx)}${cIdx + 1}`;
+        const res = await fetch(`${this.apiBase}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command }) });
+        if (!res.ok) { const errorData = await res.json(); alert(`Error: ${errorData.error}`); return; }
+        this.gameState = await res.json();
+        if (this.gameState.winner) this.calculateWinningPath();
+        this.$refs.performanceMetrics.fetchPerformanceData();
+      } catch (err) {
+        console.error('Operation failed:', err);
+        alert('Operation failed. Please check console logs.');
+      }
+    }
+  },
+  async mounted() {
+    try {
+      await fetch(`${this.apiBase}/setPlayers?count=2`, { method: 'POST' });
+      await this.fetchGameState();
+      // Use this.$nextTick to ensure the child component is mounted before calling its method
+      this.$nextTick(() => {
+        this.$refs.performanceMetrics.fetchPerformanceData();
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
-
-async function resetBoard() {
-  try {
-    const res = await fetch(`${apiBase}/reset`, { method: 'POST' });
-    gameState.value = await res.json();
-    winningCells.length = 0;
-    // [FIX #4] Trigger metrics refresh
-    performanceMetricsRef.value?.fetchPerformanceData();
-  } catch (err) {
-    console.error('Failed to reset board:', err);
-  }
-}
-
-async function setPlayers() {
-  if (!playerCountInput.value) return;
-  try {
-    const count = parseInt(playerCountInput.value);
-    if (isNaN(count) || count < 2 || count > 9) { alert('Please enter a player count between 2 and 9.'); return; }
-    const res = await fetch(`${apiBase}/setPlayers?count=${count}`, { method: 'POST' });
-    gameState.value = await res.json();
-    playerCountInput.value = '';
-    // [FIX #4] Trigger metrics refresh
-    performanceMetricsRef.value?.fetchPerformanceData();
-  } catch (err) {
-    console.error('Failed to set players:', err);
-  }
-}
-
-async function setBoardSize() {
-  if (!rowsInput.value || !colsInput.value) return;
-  try {
-    const rows = parseInt(rowsInput.value);
-    const cols = parseInt(colsInput.value);
-    if (isNaN(rows) || rows < 3 || rows > 9 || isNaN(cols) || cols < 3 || cols > 9) { alert('Rows and columns must be between 3 and 9.'); return; }
-    const res = await fetch(`${apiBase}/setSize?rows=${rows}&cols=${cols}`, { method: 'POST' });
-    gameState.value = await res.json();
-    rowsInput.value = '';
-    colsInput.value = '';
-    // [FIX #4] Trigger metrics refresh
-    performanceMetricsRef.value?.fetchPerformanceData();
-  } catch (err) {
-    console.error('Failed to set board size:', err);
-  }
-}
-
-async function clickCell(rIdx, cIdx) {
-  if (gameState.value.winner || gameState.value.drawn) return;
-  try {
-    if (gameState.value.board[rIdx][cIdx] !== ' ') { alert("This cell is already occupied. Please choose an empty cell!"); return; }
-    const command = `${String.fromCharCode('a'.charCodeAt(0) + rIdx)}${cIdx + 1}`;
-    const res = await fetch(`${apiBase}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command }) });
-    if (!res.ok) { const errorData = await res.json(); alert(`Error: ${errorData.error}`); return; }
-    gameState.value = await res.json();
-    if (gameState.value.winner) calculateWinningPath();
-    // [FIX #4] Trigger metrics refresh
-    performanceMetricsRef.value?.fetchPerformanceData();
-  } catch (err) {
-    console.error('Operation failed:', err);
-    alert('Operation failed. Please check console logs.');
-  }
-}
-
-onMounted(async () => {
-  try {
-    await fetch(`${apiBase}/setPlayers?count=2`, { method: 'POST' });
-    await fetchGameState();
-    // [FIX #4] Trigger metrics refresh after initial setup
-    performanceMetricsRef.value?.fetchPerformanceData();
-  } catch (err) {
-    console.error(err);
-  }
-});
 </script>
 
 <style>
